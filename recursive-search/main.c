@@ -12,7 +12,7 @@ char* in_sign;
 int read_file(const char* filename, unsigned char* signature, size_t signature_len) {
     FILE* fp = fopen(filename, "rb");
     if (!fp) {
-        printf("Error opening file %s\n", filename); // нужно добавить перевод строки \n
+        printf("Error opening file %s\n", filename);
         return -1;
     }
 
@@ -25,19 +25,24 @@ int read_file(const char* filename, unsigned char* signature, size_t signature_l
         fclose(fp);
         return -1;
     }
-    fread(buffer, 1, file_size, fp);
+    long file_size1 = fread(buffer, 1, file_size, fp);
+    if(file_size1 != file_size)
+    {
+        printf("Error: The file is not fully read");
+        exit(1);
+    }
     fclose(fp);
 
     int found = 0;
 
-    if (file_size < signature_len)
+    if (file_size < (long int)signature_len)
     {
         free(buffer);
         return 0;
     }
     
     int i;
-    for (i = 0; i <= file_size - signature_len; i++)
+    for (i = 0; i <= (int)(file_size - signature_len); i++)
     {
         if (memcmp(buffer + i, signature, signature_len) == 0) {
             found = 1;
