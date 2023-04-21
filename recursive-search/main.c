@@ -69,19 +69,29 @@ void recursive_search(char *d, unsigned char* signature)
             {
                 continue;
             }
-            char path[1024];
+            char* path = malloc(strlen(d) + strlen(entry->d_name) + 2); // выделяем память для строки path
+            if (!path) {
+                perror("Error allocating memory");
+                exit(1);
+            }
             strcpy(path, d);
             strcat(path, "/");
             strcat(path, entry->d_name);
             recursive_search(path, signature);
+            free(path);
         }
         else if(entry->d_type == DT_REG)
         {
-            char name[1024];
+            char* name = malloc(strlen(d) + strlen(entry->d_name) + 2); // выделяем память для строки name
+            if (!name) {
+                perror("Error allocating memory");
+                exit(1);
+            }
             strcpy(name, d);
             strcat(name, "/");
             strcat(name, entry->d_name);
             read_file(name, signature, strlen(signature));
+            free(name);
         }
     }
 
@@ -102,7 +112,6 @@ unsigned char* parseHexString(char* str) {
     }
     return bytes;
 }
-    
 
 int main(int argc, char **argv)
 {
