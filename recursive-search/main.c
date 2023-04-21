@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+int isdebug=0;
+char* in_sign;
+
 // Функция для чтения файла и поиска сигнатуры
 int read_file(const char* filename, unsigned char* signature, size_t signature_len) {
     FILE* fp = fopen(filename, "rb");
@@ -32,8 +35,9 @@ int read_file(const char* filename, unsigned char* signature, size_t signature_l
         free(buffer);
         return 0;
     }
-
-    for (int i = 0; i <= file_size - signature_len; i++)
+    
+    int i;
+    for (i = 0; i <= file_size - signature_len; i++)
     {
         if (memcmp(buffer + i, signature, signature_len) == 0) {
             found = 1;
@@ -43,8 +47,16 @@ int read_file(const char* filename, unsigned char* signature, size_t signature_l
 
     free(buffer);
 
-    if (found > 0) {
-        printf("%s\n", filename);
+    if (found>0)
+    {
+        if (isdebug)
+        {
+            fprintf(stderr, "found singnature %s in file %s the first match %i - %lu symbols\n", in_sign, filename, i, i+(strlen(in_sign)/2)-2);
+        }
+        else
+        {
+            printf("%s \n", filename);
+        }
     }
     return found;
 }
@@ -69,8 +81,9 @@ void recursive_search(char *d, unsigned char* signature)
             {
                 continue;
             }
-            char* path = malloc(strlen(d) + strlen(entry->d_name) + 2); // выделяем память для строки path
-            if (!path) {
+            char* path = malloc(strlen(d) + strlen(entry->d_name) + 2);
+            if (!path)
+            {
                 perror("Error allocating memory");
                 exit(1);
             }
@@ -78,20 +91,19 @@ void recursive_search(char *d, unsigned char* signature)
             strcat(path, "/");
             strcat(path, entry->d_name);
             recursive_search(path, signature);
-            free(path);
         }
         else if(entry->d_type == DT_REG)
         {
-            char* name = malloc(strlen(d) + strlen(entry->d_name) + 2); // выделяем память для строки name
-            if (!name) {
+            char* name = malloc(strlen(d) + strlen(entry->d_name) + 2);
+            if (!name)
+            {
                 perror("Error allocating memory");
                 exit(1);
             }
             strcpy(name, d);
             strcat(name, "/");
             strcat(name, entry->d_name);
-            read_file(name, signature, strlen(signature));
-            free(name);
+            read_file(name, signature, strlen((const char*)signature));
         }
     }
 
@@ -112,13 +124,22 @@ unsigned char* parseHexString(char* str) {
     }
     return bytes;
 }
+    
 
 int main(int argc, char **argv)
 {
+    char *debug = getenv("LAB11DEBUG");
+    if (debug != NULL)
+    {
+        fprintf(stderr, "Debug mode is on\n");
+        isdebug = 1;
+    }
+    
     if ((argv[1] != NULL) && (argv[2] != NULL))
     {
         char* d = argv[1];
         char* signature_str = argv[2];
+        in_sign = argv[2];
         unsigned char* signature = parseHexString(signature_str);
         
         if (signature == NULL) {
@@ -152,11 +173,10 @@ int main(int argc, char **argv)
             case '?':
                 break;
             default:
-                printf("Unexpected option %c\n", c);
+                fprintf(stderr, "Error: unknown option '%c'. Use --help for usage information.\n", optopt);
                 return 1;
         }
     }
 
     return 0;
 }
-
